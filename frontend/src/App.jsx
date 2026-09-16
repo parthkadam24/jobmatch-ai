@@ -6,6 +6,7 @@ import JobList from "./pages/JobList";
 import JobDetail from "./pages/JobDetail";
 import PostJob from "./pages/PostJob";
 import MyApplications from "./pages/MyApplications";
+import MyJobs from "./pages/MyJobs";
 
 const isLoggedIn = () => !!localStorage.getItem("token");
 
@@ -32,6 +33,10 @@ function App() {
                 <Route
                     path="/my-applications"
                     element={isLoggedIn() ? <MyApplications /> : <Navigate to="/login" />}
+                />
+                <Route
+                    path="/my-jobs"
+                    element={isLoggedIn() ? <MyJobs /> : <Navigate to="/login" />}
                 />
                 <Route path="*" element={<Navigate to="/jobs" />} />
             </Routes>
