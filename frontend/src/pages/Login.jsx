@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
+import robotImage from "../assets/robot.jpg";
 
 function Login() {
     const navigate = useNavigate();
@@ -19,70 +20,169 @@ function Login() {
             const response = await authAPI.login({ email, password });
             const token = response.data.token;
 
-            // Save token
             localStorage.setItem("token", token);
 
-            // Decode token to extract user info (email, role)
             const payload = JSON.parse(atob(token.split(".")[1]));
-            localStorage.setItem("user", JSON.stringify({
-                email: payload.sub,
-                role: payload.role || "CANDIDATE",
-            }));
+            localStorage.setItem(
+                "user",
+                JSON.stringify({
+                    email: payload.sub,
+                    role: payload.role || "CANDIDATE",
+                })
+            );
 
-            // Redirect to jobs page
             navigate("/jobs");
-            window.location.reload(); // refresh to update navbar
+            window.location.reload();
         } catch (err) {
-            setError(err.response?.data || "Login failed. Check your credentials.");
+            setError(
+                err.response?.data || "Login failed. Check your credentials."
+            );
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="auth-container">
-            <h1 className="auth-title">Welcome Back</h1>
-            <p className="auth-subtitle">Login to your JobMatch AI account</p>
+        <div className="login-page">
+            {/* Animated background orbs */}
+            <div className="login-bg">
+                <div className="bg-orb bg-orb-1"></div>
+                <div className="bg-orb bg-orb-2"></div>
+                <div className="bg-orb bg-orb-3"></div>
+            </div>
 
-            {error && <div className="alert alert-error">{error}</div>}
+            <div className="login-container">
+                {/* LEFT: Brand panel */}
+                <div className="login-brand">
+                    <div className="brand-logo">
+                        JobMatch <span>AI</span>
+                    </div>
 
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-input"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+                    <h1 className="brand-title">
+                        Find your dream job
+                        <br />
+                        with the <span className="brand-gradient">power of AI</span>
+                    </h1>
+
+                    <p className="brand-subtitle">
+                        The intelligent platform that matches your skills with
+                        the right opportunities.
+                    </p>
+
+                    <div className="brand-image-wrapper">
+                        <img
+                            src={robotImage}
+                            alt="AI Robot"
+                            className="brand-image"
+                        />
+                    </div>
+
+                    <div className="brand-features">
+                        <div className="feature-item">
+                            <span className="feature-icon">🎯</span>
+                            <div>
+                                <strong>AI Match Scoring</strong>
+                                <p>See instant % match for every job</p>
+                            </div>
+                        </div>
+
+                        <div className="feature-item">
+                            <span className="feature-icon">📄</span>
+                            <div>
+                                <strong>Resume Parsing</strong>
+                                <p>Auto-extract skills from your PDF</p>
+                            </div>
+                        </div>
+
+                        <div className="feature-item">
+                            <span className="feature-icon">✨</span>
+                            <div>
+                                <strong>Cover Letters</strong>
+                                <p>AI-generated, personalized for each job</p>
+                            </div>
+                        </div>
+
+                        <div className="feature-item">
+                            <span className="feature-icon">📊</span>
+                            <div>
+                                <strong>Smart Tracking</strong>
+                                <p>Real-time application status updates</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="form-group">
-                    <label className="form-label">Password</label>
-                    <input
-                        type="password"
-                        className="form-input"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                {/* RIGHT: Login card */}
+                <div className="login-form-side">
+                    <div className="login-card">
+                        <div className="login-card-header">
+                            <h2 className="welcome-title">
+                                Welcome <span>back</span>
+                            </h2>
+                            <div className="welcome-underline"></div>
+                            <p className="welcome-subtitle">
+                                Sign in to continue to your JobMatch AI account
+                            </p>
+                        </div>
+
+                        {error && (
+                            <div className="login-error">
+                                <span>⚠️</span> {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit}>
+                            <div className="input-group">
+                                <span className="input-icon">✉️</span>
+                                <input
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <span className="input-icon">🔒</span>
+                                <input
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="login-options">
+                                <label className="checkbox-label">
+                                    <input type="checkbox" />
+                                    <span>Remember me</span>
+                                </label>
+                                <a href="#" className="forgot-link">
+                                    Forgot password?
+                                </a>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="login-btn"
+                                disabled={loading}
+                            >
+                                {loading ? "Signing in..." : "Sign In"}
+                            </button>
+                        </form>
+
+                        <div className="login-divider">
+                            <span>New to JobMatch AI?</span>
+                        </div>
+
+                        <Link to="/register" className="register-btn">
+                            Create Account →
+                        </Link>
+                    </div>
                 </div>
-
-                <button
-                    type="submit"
-                    className="btn btn-primary btn-block mt-4"
-                    disabled={loading}
-                >
-                    {loading ? "Logging in..." : "Login"}
-                </button>
-            </form>
-
-            <p className="text-center mt-4" style={{ fontSize: "14px" }}>
-                Don't have an account? <Link to="/register">Register</Link>
-            </p>
+            </div>
         </div>
     );
 }
