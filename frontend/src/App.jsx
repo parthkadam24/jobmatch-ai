@@ -3,8 +3,9 @@ import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import JobList from "./pages/JobList";
+import PostJob from "./pages/PostJob";
+import JobDetail from "./pages/JobDetail";
 
-// Simple auth check
 const isLoggedIn = () => !!localStorage.getItem("token");
 
 function App() {
@@ -19,8 +20,14 @@ function App() {
                     path="/jobs"
                     element={isLoggedIn() ? <JobList /> : <Navigate to="/login" />}
                 />
-
-                {/* Placeholder routes — we'll build these soon */}
+                <Route
+                    path="/jobs/:id"
+                    element={isLoggedIn() ? <JobDetail /> : <Navigate to="/login" />}
+                />
+                <Route
+                    path="/post-job"
+                    element={isLoggedIn() ? <PostJob /> : <Navigate to="/login" />}
+                />
                 <Route path="*" element={<Navigate to="/jobs" />} />
             </Routes>
         </BrowserRouter>

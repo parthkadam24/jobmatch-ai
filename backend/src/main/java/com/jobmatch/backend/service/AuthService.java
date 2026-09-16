@@ -22,6 +22,9 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // ============================================================
+    // REGISTER
+    // ============================================================
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
@@ -35,10 +38,14 @@ public class AuthService {
 
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        // Generate token WITH role
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return new AuthResponse(token);
     }
 
+    // ============================================================
+    // LOGIN
+    // ============================================================
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
@@ -47,7 +54,8 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        // Generate token WITH role
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return new AuthResponse(token);
     }
 }

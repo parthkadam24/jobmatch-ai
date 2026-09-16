@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { jobAPI } from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function JobList() {
+    const navigate = useNavigate();   // ← Moved INSIDE the function
+
     const [jobs, setJobs] = useState([]);
     const [keyword, setKeyword] = useState("");
     const [loading, setLoading] = useState(true);
@@ -106,7 +109,10 @@ function JobList() {
                                 </div>
 
                                 <div className="row">
-                                    <button className="btn btn-primary">
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => navigate(`/jobs/${job.id}`)}
+                                    >
                                         View & Apply
                                     </button>
                                 </div>

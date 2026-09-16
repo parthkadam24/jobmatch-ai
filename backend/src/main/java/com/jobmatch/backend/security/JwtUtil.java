@@ -22,6 +22,9 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // ============================================================
+    // Extract claims
+    // ============================================================
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -30,12 +33,6 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // ADD THIS METHOD - Extract email from token
-    public String extractEmail(String token) {
-        return extractClaim(token, claims -> claims.get("email", String.class));
-    }
-
-    // ADD THIS METHOD - Extract role from token
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
@@ -57,15 +54,19 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
+    // ============================================================
+    // Generate tokens
+    // ============================================================
+
+    // Old method — kept for compatibility
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username);
     }
 
-    // ADD THIS METHOD - Generate token with extra claims
-    public String generateToken(String username, String email, String role) {
+    // NEW method — includes role in the JWT
+    public String generateToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", email);
         claims.put("role", role);
         return createToken(claims, username);
     }
@@ -75,12 +76,14 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // FIX THIS METHOD - Change to accept only token (username will be extracted from token)
+    // ============================================================
+    // Validate
+    // ============================================================
     public Boolean validateToken(String token) {
         try {
             return !isTokenExpired(token);
@@ -89,7 +92,6 @@ public class JwtUtil {
         }
     }
 
-    // Keep this overloaded method for backward compatibility
     public Boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));

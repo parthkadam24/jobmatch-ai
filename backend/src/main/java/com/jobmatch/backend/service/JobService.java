@@ -43,7 +43,7 @@ public class JobService {
 
     // Get all jobs
     public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+        return jobRepository.findAllByOrderByIdDesc();
     }
 
     // Get a single job by ID

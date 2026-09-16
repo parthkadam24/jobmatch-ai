@@ -12,6 +12,9 @@ import java.util.List;
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long> {
 
+    // Get all jobs, newest first (id descending)
+    List<Job> findAllByOrderByIdDesc();
+
     // Get all jobs posted by a specific recruiter
     List<Job> findByRecruiter(User recruiter);
 
