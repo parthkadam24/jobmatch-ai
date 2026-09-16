@@ -181,16 +181,35 @@ Frontend runs at **http://localhost:5173**
 
 ## 📸 Screenshots
 
-### Login Page
-_Screenshots coming soon_
+### 🔐 Login Page
+Modern glassmorphism login with AI-themed design
 
-### Job Listings
-_Screenshots coming soon_
+![Login](screenshots/login.png)
 
-### Match Score
-_Screenshots coming soon_
+### 💼 Job Listings with AI Match Scores
+See instant % match for every job based on your resume
 
----
+![Jobs](screenshots/job-list.png)
+
+### 🎯 Job Detail with AI Match & Cover Letter
+Full breakdown of matching skills, missing skills, and AI-generated cover letter
+
+![Job Detail](screenshots/job-detail.png)
+
+### 📝 My Applications
+Track all your job applications with real-time status updates
+
+![Applications](screenshots/applications.png)
+
+### 📄 AI-Powered Resume Parsing
+Upload your PDF and let AI extract your skills automatically
+
+![Resume](screenshots/resume.png)
+
+### ➕ Post a Job (Recruiter)
+Recruiters can post jobs with all required details
+
+![Post Job](screenshots/post-job.png)
 
 ## 🔮 Roadmap
 
