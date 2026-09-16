@@ -14,6 +14,13 @@ function JobDetail() {
     const [applying, setApplying] = useState(false);
     const [alreadyApplied, setAlreadyApplied] = useState(false);
     const [matchData, setMatchData] = useState(null);
+    const [resume, setResume] = useState(null);
+
+    // Cover letter state
+    const [coverLetter, setCoverLetter] = useState("");
+    const [generatingLetter, setGeneratingLetter] = useState(false);
+    const [letterError, setLetterError] = useState("");
+    const [copied, setCopied] = useState(false);
 
     const user = JSON.parse(localStorage.getItem("user") || "null");
     const role = user?.role;
@@ -38,6 +45,10 @@ function JobDetail() {
         setApplyMessage("");
         setApplyError("");
         setMatchData(null);
+        setResume(null);
+        setCoverLetter("");
+        setLetterError("");
+        setCopied(false);
 
         const checkApplication = async () => {
             if (role !== "CANDIDATE") return;
@@ -56,10 +67,12 @@ function JobDetail() {
             if (role !== "CANDIDATE") return;
             try {
                 const resumeRes = await resumeAPI.myResume();
-                const resume = resumeRes.data;
-                if (!resume || !resume.skills) return;
+                const resumeData = resumeRes.data;
+                if (!resumeData || !resumeData.skills) return;
 
-                const candidateId = resume.candidate?.id;
+                setResume(resumeData);
+
+                const candidateId = resumeData.candidate?.id;
                 if (!candidateId) return;
 
                 const matchRes = await aiAPI.matchScore(id, candidateId);
@@ -89,6 +102,31 @@ function JobDetail() {
         } finally {
             setApplying(false);
         }
+    };
+
+    const handleGenerateCoverLetter = async () => {
+        if (!resume) return;
+
+        setLetterError("");
+        setCoverLetter("");
+        setGeneratingLetter(true);
+
+        try {
+            const res = await aiAPI.coverLetter(parseInt(id), resume.id);
+            setCoverLetter(res.data.coverLetter);
+        } catch (err) {
+            setLetterError(
+                err.response?.data || "Failed to generate cover letter."
+            );
+        } finally {
+            setGeneratingLetter(false);
+        }
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(coverLetter);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     if (loading) {
@@ -221,6 +259,94 @@ function JobDetail() {
                                     ))}
                                 </div>
                             </>
+                        )}
+                    </div>
+                )}
+
+                {/* COVER LETTER */}
+                {role === "CANDIDATE" && resume && (
+                    <div
+                        className="card"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #fef3c7 0%, #fef9f3 100%)",
+                            borderLeft: "4px solid #f59e0b",
+                        }}
+                    >
+                        <div className="row-between">
+                            <div style={{ flex: 1 }}>
+                                <h3
+                                    className="card-title"
+                                    style={{ color: "#b45309" }}
+                                >
+                                    ✨ AI Cover Letter
+                                </h3>
+                                <p className="card-subtitle">
+                                    Generate a personalized cover letter for this
+                                    position using your resume.
+                                </p>
+                            </div>
+                        </div>
+
+                        {!coverLetter && (
+                            <button
+                                className="btn btn-primary mt-4"
+                                onClick={handleGenerateCoverLetter}
+                                disabled={generatingLetter}
+                                style={{
+                                    background: "#f59e0b",
+                                    padding: "12px 24px",
+                                }}
+                            >
+                                {generatingLetter
+                                    ? "✨ Generating with AI..."
+                                    : "✨ Generate Cover Letter"}
+                            </button>
+                        )}
+
+                        {letterError && (
+                            <div className="alert alert-error mt-4">
+                                {letterError}
+                            </div>
+                        )}
+
+                        {coverLetter && (
+                            <div className="mt-4">
+                                <div
+                                    style={{
+                                        background: "#ffffff",
+                                        padding: "20px",
+                                        borderRadius: "8px",
+                                        border: "1px solid #e2e8f0",
+                                        whiteSpace: "pre-wrap",
+                                        fontFamily:
+                                            "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                        fontSize: "14px",
+                                        lineHeight: "1.6",
+                                        maxHeight: "400px",
+                                        overflowY: "auto",
+                                    }}
+                                >
+                                    {coverLetter}
+                                </div>
+                                <div className="row mt-4">
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleCopy}
+                                    >
+                                        {copied ? "✓ Copied!" : "📋 Copy to Clipboard"}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={handleGenerateCoverLetter}
+                                        disabled={generatingLetter}
+                                    >
+                                        {generatingLetter
+                                            ? "Regenerating..."
+                                            : "🔄 Regenerate"}
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
