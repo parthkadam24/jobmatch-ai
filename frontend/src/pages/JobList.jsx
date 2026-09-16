@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { jobAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { jobAPI } from "../services/api";
 
 function JobList() {
-    const navigate = useNavigate();   // ← Moved INSIDE the function
+    const navigate = useNavigate();
 
     const [jobs, setJobs] = useState([]);
     const [keyword, setKeyword] = useState("");

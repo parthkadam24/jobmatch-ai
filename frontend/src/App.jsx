@@ -3,8 +3,9 @@ import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import JobList from "./pages/JobList";
-import PostJob from "./pages/PostJob";
 import JobDetail from "./pages/JobDetail";
+import PostJob from "./pages/PostJob";
+import MyApplications from "./pages/MyApplications";
 
 const isLoggedIn = () => !!localStorage.getItem("token");
 
@@ -27,6 +28,10 @@ function App() {
                 <Route
                     path="/post-job"
                     element={isLoggedIn() ? <PostJob /> : <Navigate to="/login" />}
+                />
+                <Route
+                    path="/my-applications"
+                    element={isLoggedIn() ? <MyApplications /> : <Navigate to="/login" />}
                 />
                 <Route path="*" element={<Navigate to="/jobs" />} />
             </Routes>

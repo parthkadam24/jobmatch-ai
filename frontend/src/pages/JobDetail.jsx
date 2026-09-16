@@ -33,7 +33,13 @@ function JobDetail() {
     }, [id]);
 
     // Check if already applied (only for candidates)
+       // Check if already applied (only for candidates)
     useEffect(() => {
+        // Reset state when navigating to a new job
+        setAlreadyApplied(false);
+        setApplyMessage("");
+        setApplyError("");
+
         const checkApplication = async () => {
             if (role !== "CANDIDATE") return;
             try {
@@ -43,7 +49,7 @@ function JobDetail() {
                 );
                 setAlreadyApplied(hasApplied);
             } catch (err) {
-                // Ignore
+                setAlreadyApplied(false);
             }
         };
         checkApplication();
