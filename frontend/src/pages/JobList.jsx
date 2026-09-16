@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { jobAPI } from "../services/api";
+import { jobAPI, aiAPI, resumeAPI } from "../services/api";
 
 function JobList() {
     const navigate = useNavigate();
@@ -9,6 +9,11 @@ function JobList() {
     const [keyword, setKeyword] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [matchScores, setMatchScores] = useState({});
+    const [hasResume, setHasResume] = useState(false);
+
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const role = user?.role;
 
     const fetchJobs = async () => {
         setLoading(true);
@@ -22,6 +27,43 @@ function JobList() {
             setLoading(false);
         }
     };
+
+    // Fetch match scores if user is candidate with parsed resume
+    useEffect(() => {
+        const fetchMatches = async () => {
+            if (role !== "CANDIDATE" || jobs.length === 0) return;
+
+            try {
+                const resumeRes = await resumeAPI.myResume();
+                const resume = resumeRes.data;
+
+                if (!resume || !resume.skills) {
+                    setHasResume(false);
+                    return;
+                }
+
+                setHasResume(true);
+                const candidateId = resume.candidate?.id;
+
+                if (!candidateId) return;
+
+                const scores = {};
+                for (const job of jobs) {
+                    try {
+                        const matchRes = await aiAPI.matchScore(job.id, candidateId);
+                        scores[job.id] = matchRes.data;
+                    } catch (err) {
+                        // Skip jobs with no match
+                    }
+                }
+                setMatchScores(scores);
+            } catch (err) {
+                setHasResume(false);
+            }
+        };
+
+        fetchMatches();
+    }, [jobs, role]);
 
     useEffect(() => {
         fetchJobs();
@@ -44,10 +86,30 @@ function JobList() {
         }
     };
 
+    const getMatchColor = (score) => {
+        if (score >= 80) return "badge badge-success";
+        if (score >= 60) return "badge badge-info";
+        if (score >= 40) return "badge badge-warning";
+        return "badge badge-danger";
+    };
+
     return (
         <div className="page">
             <div className="container">
                 <h1 className="page-title">Available Jobs</h1>
+
+                {role === "CANDIDATE" && !hasResume && (
+                    <div className="alert alert-info">
+                        💡 Upload and parse your resume to see AI-powered match
+                        scores!{" "}
+                        <a
+                            href="/my-resume"
+                            style={{ fontWeight: "600", marginLeft: "6px" }}
+                        >
+                            Upload Now →
+                        </a>
+                    </div>
+                )}
 
                 <form onSubmit={handleSearch} className="row mb-4">
                     <input
@@ -88,36 +150,52 @@ function JobList() {
                     </div>
                 ) : (
                     <div>
-                        {jobs.map((job) => (
-                            <div key={job.id} className="card">
-                                <h3 className="card-title">{job.title}</h3>
-                                <p className="card-subtitle">
-                                    {job.company} · {job.location} · {job.salary}
-                                </p>
-                                <p className="card-description">
-                                    {job.description?.substring(0, 180)}
-                                    {job.description?.length > 180 ? "..." : ""}
-                                </p>
-
-                                <div className="mb-2">
-                                    {job.skills &&
-                                        job.skills.split(",").map((skill, i) => (
-                                            <span key={i} className="badge">
-                                                {skill.trim()}
+                        {jobs.map((job) => {
+                            const match = matchScores[job.id];
+                            return (
+                                <div key={job.id} className="card">
+                                    <div className="row-between">
+                                        <div style={{ flex: 1 }}>
+                                            <h3 className="card-title">{job.title}</h3>
+                                            <p className="card-subtitle">
+                                                {job.company} · {job.location} ·{" "}
+                                                {job.salary}
+                                            </p>
+                                        </div>
+                                        {match && (
+                                            <span className={getMatchColor(match.score)}>
+                                                🎯 {match.score}% Match
                                             </span>
-                                        ))}
-                                </div>
+                                        )}
+                                    </div>
 
-                                <div className="row">
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={() => navigate(`/jobs/${job.id}`)}
-                                    >
-                                        View & Apply
-                                    </button>
+                                    <p className="card-description">
+                                        {job.description?.substring(0, 180)}
+                                        {job.description?.length > 180 ? "..." : ""}
+                                    </p>
+
+                                    <div className="mb-2">
+                                        {job.skills &&
+                                            job.skills
+                                                .split(",")
+                                                .map((skill, i) => (
+                                                    <span key={i} className="badge">
+                                                        {skill.trim()}
+                                                    </span>
+                                                ))}
+                                    </div>
+
+                                    <div className="row">
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={() => navigate(`/jobs/${job.id}`)}
+                                        >
+                                            View & Apply
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

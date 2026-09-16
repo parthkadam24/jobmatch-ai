@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { jobAPI, applicationAPI, aiAPI } from "../services/api";
+import { jobAPI, applicationAPI, aiAPI, resumeAPI } from "../services/api";
 
 function JobDetail() {
     const { id } = useParams();
@@ -13,11 +13,11 @@ function JobDetail() {
     const [applyError, setApplyError] = useState("");
     const [applying, setApplying] = useState(false);
     const [alreadyApplied, setAlreadyApplied] = useState(false);
+    const [matchData, setMatchData] = useState(null);
 
     const user = JSON.parse(localStorage.getItem("user") || "null");
     const role = user?.role;
 
-    // Fetch job details
     useEffect(() => {
         const fetchJob = async () => {
             try {
@@ -32,13 +32,12 @@ function JobDetail() {
         fetchJob();
     }, [id]);
 
-    // Check if already applied (only for candidates)
-       // Check if already applied (only for candidates)
     useEffect(() => {
-        // Reset state when navigating to a new job
+        // Reset state when job changes
         setAlreadyApplied(false);
         setApplyMessage("");
         setApplyError("");
+        setMatchData(null);
 
         const checkApplication = async () => {
             if (role !== "CANDIDATE") return;
@@ -52,7 +51,26 @@ function JobDetail() {
                 setAlreadyApplied(false);
             }
         };
+
+        const fetchMatchScore = async () => {
+            if (role !== "CANDIDATE") return;
+            try {
+                const resumeRes = await resumeAPI.myResume();
+                const resume = resumeRes.data;
+                if (!resume || !resume.skills) return;
+
+                const candidateId = resume.candidate?.id;
+                if (!candidateId) return;
+
+                const matchRes = await aiAPI.matchScore(id, candidateId);
+                setMatchData(matchRes.data);
+            } catch (err) {
+                // No match available
+            }
+        };
+
         checkApplication();
+        fetchMatchScore();
     }, [id, role]);
 
     const handleApply = async () => {
@@ -71,13 +89,6 @@ function JobDetail() {
         } finally {
             setApplying(false);
         }
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
-        window.location.reload();
     };
 
     if (loading) {
@@ -108,6 +119,13 @@ function JobDetail() {
 
     const skills = job.skills ? job.skills.split(",").map((s) => s.trim()) : [];
 
+    const getScoreColor = (score) => {
+        if (score >= 80) return "#22c55e";
+        if (score >= 60) return "#3b82f6";
+        if (score >= 40) return "#f59e0b";
+        return "#ef4444";
+    };
+
     return (
         <div className="page">
             <div className="container" style={{ maxWidth: "800px" }}>
@@ -118,6 +136,96 @@ function JobDetail() {
                     ← Back to Jobs
                 </button>
 
+                {/* MATCH SCORE */}
+                {matchData && (
+                    <div
+                        className="card"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%)",
+                            borderLeft: "4px solid #4f46e5",
+                        }}
+                    >
+                        <div className="row-between">
+                            <div style={{ flex: 1 }}>
+                                <h3
+                                    className="card-title"
+                                    style={{ color: "#4f46e5" }}
+                                >
+                                    🎯 AI Match Score
+                                </h3>
+                                <p className="card-subtitle">
+                                    {matchData.recommendation}
+                                </p>
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: "36px",
+                                    fontWeight: "800",
+                                    color: getScoreColor(matchData.score),
+                                    marginLeft: "16px",
+                                }}
+                            >
+                                {matchData.score}%
+                            </div>
+                        </div>
+
+                        {matchData.matched && matchData.matched.length > 0 && (
+                            <>
+                                <hr
+                                    style={{
+                                        margin: "16px 0",
+                                        border: "none",
+                                        borderTop: "1px solid #e2e8f0",
+                                    }}
+                                />
+                                <h4
+                                    style={{
+                                        marginBottom: "8px",
+                                        fontSize: "14px",
+                                        color: "#166534",
+                                    }}
+                                >
+                                    ✅ Matching Skills ({matchData.matched.length})
+                                </h4>
+                                <div>
+                                    {matchData.matched.map((skill, i) => (
+                                        <span
+                                            key={i}
+                                            className="badge badge-success"
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {matchData.missing && matchData.missing.length > 0 && (
+                            <>
+                                <h4
+                                    style={{
+                                        marginTop: "16px",
+                                        marginBottom: "8px",
+                                        fontSize: "14px",
+                                        color: "#991b1b",
+                                    }}
+                                >
+                                    📚 Skills to Learn ({matchData.missing.length})
+                                </h4>
+                                <div>
+                                    {matchData.missing.map((skill, i) => (
+                                        <span key={i} className="badge badge-danger">
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* JOB DETAILS */}
                 <div className="card">
                     <h1 className="card-title" style={{ fontSize: "26px" }}>
                         {job.title}
@@ -142,12 +250,7 @@ function JobDetail() {
                         {job.description}
                     </p>
 
-                    <h3
-                        style={{
-                            marginTop: "24px",
-                            marginBottom: "10px",
-                        }}
-                    >
+                    <h3 style={{ marginTop: "24px", marginBottom: "10px" }}>
                         Required Skills
                     </h3>
                     <div>
@@ -199,16 +302,6 @@ function JobDetail() {
                     {role === "RECRUITER" && (
                         <div className="alert alert-info">
                             You are viewing this job as a recruiter.
-                        </div>
-                    )}
-
-                    {!user && (
-                        <div className="alert alert-info">
-                            Please{" "}
-                            <a href="/login" style={{ fontWeight: "600" }}>
-                                login
-                            </a>{" "}
-                            as a candidate to apply.
                         </div>
                     )}
                 </div>
